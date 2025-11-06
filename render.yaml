@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: dtn-focalboard
+    env: docker
+    plan: free
+    region: frankfurt
+    autoDeploy: true
+    healthCheckPath: /
+    envVars:
+      - key: DB_CONN_STRING
+        sync: false

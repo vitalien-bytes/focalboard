@@ -1,0 +1,7 @@
+{
+  "serverRoot": "http://0.0.0.0",
+  "port": 8000,
+  "dbtype": "postgres",
+  "dbconfig": "__DB_URL__",
+  "useSSL": true
+}

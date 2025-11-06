@@ -1,13 +1,29 @@
-FROM mattermost/focalboard:latest
+# Étape 1 : base image
+FROM node:18-alpine AS build
 
-# Copie la configuration et le script
-COPY config.json /opt/focalboard/config.json
-COPY entrypoint.sh /entrypoint.sh
+# Dossier de travail
+WORKDIR /app
 
-# Donne les droits d’exécution
-RUN chmod +x /entrypoint.sh
+# Copie du contenu du projet
+COPY . .
 
-# Dossier pour la DB locale (non utilisé avec Postgres)
-RUN mkdir -p /data
+# Donne les droits d'exécution dès la copie
+RUN dos2unix entrypoint.sh && chmod 755 entrypoint.sh
 
-ENTRYPOINT ["/entrypoint.sh"]
+# Étape 2 : exécution
+FROM alpine:3.18
+
+# Installer bash, node et dépendances
+RUN apk add --no-cache bash nodejs npm
+
+# Dossier de travail
+WORKDIR /app
+
+# Copier les fichiers de build
+COPY --from=build /app /app
+
+# Port exposé
+EXPOSE 8000
+
+# Commande de démarrage
+ENTRYPOINT ["sh", "./entrypoint.sh"]

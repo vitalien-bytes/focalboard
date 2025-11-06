@@ -1,8 +1,21 @@
 #!/bin/sh
-set -e
-PORT="${PORT:-8000}"
-if [ -n "$DB_CONN_STRING" ]; then
-  sed -i "s|\"__DB_URL__\"|\"${DB_CONN_STRING}\"|" /opt/focalboard/config.json
+
+# Crée le dossier s'il n'existe pas
+mkdir -p /app/config
+
+# Crée le fichier config.json s'il n'existe pas
+if [ ! -f /app/config/config.json ]; then
+  cat <<EOF > /app/config/config.json
+{
+  "serverRoot": "https://focalboard-dtn.onrender.com",
+  "port": 8000,
+  "dbtype": "postgres",
+  "dbconfig": "${DB_CONN_STRING}",
+  "useSSL": true
+}
+EOF
 fi
-sed -i "s/\"port\": *[0-9]\+/\"port\": ${PORT}/" /opt/focalboard/config.json
-exec /opt/focalboard/bin/focalboard-server
+
+# Lance le serveur Focalboard
+echo "🚀 Démarrage du serveur Focalboard..."
+npm start

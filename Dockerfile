@@ -1,29 +1,31 @@
-# Étape 1 : base image
-FROM node:18-alpine AS build
+# Étape 1 : construction complète de Focalboard (serveur + interface)
+FROM golang:1.22-bullseye AS builder
 
-# Dossier de travail
 WORKDIR /app
 
-# Copie du contenu du projet
-COPY . .
+# Installer les dépendances
+RUN apt-get update && apt-get install -y make git nodejs npm
 
-# Donne les droits d'exécution dès la copie
-RUN dos2unix entrypoint.sh && chmod 755 entrypoint.sh
+# Cloner la source officielle
+RUN git clone https://github.com/mattermost/focalboard.git .
 
-# Étape 2 : exécution
-FROM alpine:3.18
+# Construire le backend et le frontend
+RUN make build
 
-# Installer bash, node et dépendances
-RUN apk add --no-cache bash nodejs npm
+# Étape 2 : image finale allégée
+FROM debian:bullseye-slim
 
-# Dossier de travail
 WORKDIR /app
 
-# Copier les fichiers de build
-COPY --from=build /app /app
+# Copier le binaire et les fichiers essentiels
+COPY --from=builder /app/bin/focalboard-server /app/focalboard-server
+COPY --from=builder /app/web /app/web
+COPY --from=builder /app/packaged /app/packaged
 
-# Port exposé
+# Ajouter notre script d’entrée
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
 EXPOSE 8000
 
-# Commande de démarrage
-ENTRYPOINT ["sh", "./entrypoint.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"]

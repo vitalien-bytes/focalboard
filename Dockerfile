@@ -1,8 +1,8 @@
-# ---- Étape 1 : Build du serveur Focalboard (backend Go + frontend React)
-FROM golang:1.20-alpine AS builder
+# ---- Étape 1 : Build du serveur Focalboard (backend + frontend)
+FROM golang:1.22-alpine AS builder
 
 # Installer les dépendances nécessaires
-RUN apk add --no-cache git make nodejs npm
+RUN apk add --no-cache git make nodejs npm bash
 
 # Créer le répertoire de travail
 WORKDIR /app
@@ -10,8 +10,8 @@ WORKDIR /app
 # Cloner le dépôt officiel Focalboard
 RUN git clone https://github.com/mattermost/focalboard.git .
 
-# Construire le serveur (backend + frontend)
-RUN make server-linux
+# Construire le serveur
+RUN make server-linux || make build-linux
 
 # ---- Étape 2 : Image finale légère
 FROM alpine:latest
@@ -25,11 +25,11 @@ WORKDIR /app
 # Copier les fichiers compilés depuis la première étape
 COPY --from=builder /app /app
 
-# Copier ton fichier de configuration
+# Copier le fichier de configuration local
 COPY ./config.json ./config/config.json
 
-# Exposer le port utilisé par Focalboard
+# Exposer le port par défaut
 EXPOSE 8000
 
-# Démarrer le serveur Focalboard
+# Démarrer Focalboard
 CMD ["./bin/focalboard-server", "--config", "./config/config.json"]
